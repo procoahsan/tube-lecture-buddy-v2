@@ -131,6 +131,22 @@ RESEND_API_KEY=re_your_resend_api_key
 > [!TIP]
 > To quickly generate a robust `NEXTAUTH_SECRET`, you can run `openssl rand -hex 32` in your terminal.
 
+### Production OAuth settings
+
+For the Vercel deployment at `https://tube-lecture-buddy.vercel.app`, set the production auth URL to the deployed origin, not localhost:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://tube-lecture-buddy.vercel.app
+AUTH_URL=https://tube-lecture-buddy.vercel.app
+AUTH_SECRET=your_generated_32_character_hex_secret
+```
+
+`NEXTAUTH_URL` and `NEXTAUTH_SECRET` still work as aliases, but avoid leaving `NEXTAUTH_URL=http://localhost:3000` in Vercel. In Google Cloud Console, add this authorized redirect URI to the OAuth client:
+
+```text
+https://tube-lecture-buddy.vercel.app/api/auth/callback/google
+```
+
 ---
 
 ## 🚀 Running the Project Locally

@@ -5,6 +5,17 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
+const localhostAuthUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i;
+
+if (process.env.NODE_ENV === "production") {
+  for (const key of ["AUTH_URL", "NEXTAUTH_URL"] as const) {
+    const value = process.env[key];
+    if (value && localhostAuthUrl.test(value)) {
+      delete process.env[key];
+    }
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google({
@@ -110,5 +121,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 });
