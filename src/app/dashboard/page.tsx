@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [downloadAction, setDownloadAction] = useState("");
 
   const languageSectionRef = useRef<HTMLDivElement>(null);
+  const videoSectionRef = useRef<HTMLDivElement>(null);
+  const lectureFeaturesEnabled = videoInfo?.isLecture === true;
 
   const analyzeVideo = async () => {
     if (!url.trim()) return;
@@ -66,6 +68,7 @@ export default function DashboardPage() {
     setFrames([]);
     setTranslatedText("");
     setSummaryText("");
+    setActiveTab("transcript");
 
     try {
       const analyzeRes = await fetch("/api/analyze", {
@@ -76,6 +79,8 @@ export default function DashboardPage() {
       const analyzeData = await analyzeRes.json();
       if (analyzeData.error) throw new Error(analyzeData.error);
       setVideoInfo(analyzeData);
+
+      if (!analyzeData.isLecture) return;
 
       setLoadingAction("Fetching transcript...");
       const transcriptRes = await fetch("/api/transcript", {
@@ -105,7 +110,7 @@ export default function DashboardPage() {
   };
 
   const captureFramesAndDownloadPPT = async () => {
-    if (!fullText || topics.length === 0 || !videoInfo) return;
+    if (!lectureFeaturesEnabled || !fullText || topics.length === 0 || !videoInfo) return;
     setDownloadLoading(true);
     setDownloadAction("Capturing video frames for PPT...");
     setError("");
@@ -168,7 +173,7 @@ export default function DashboardPage() {
   };
 
   const downloadDOCX = async () => {
-    if (!fullText) return;
+    if (!lectureFeaturesEnabled || !fullText) return;
     setDownloadLoading(true);
     setDownloadAction("Generating DOCX document...");
     try {
@@ -195,7 +200,7 @@ export default function DashboardPage() {
   };
 
   const summarizeTranscript = async () => {
-    if (!fullText) return;
+    if (!lectureFeaturesEnabled || !fullText) return;
     setDownloadLoading(true);
     setDownloadAction("Summarizing transcript...");
     setSummaryText("");
@@ -218,7 +223,7 @@ export default function DashboardPage() {
   };
 
   const translateTranscript = async (langCode: string) => {
-    if (!fullText) return;
+    if (!lectureFeaturesEnabled || !fullText) return;
     setSelectedLang(langCode);
     setDownloadLoading(true);
     setDownloadAction(`Translating to ${LANGUAGES.find((l) => l.code === langCode)?.name}...`);
@@ -257,6 +262,7 @@ export default function DashboardPage() {
     const seconds = Math.floor(offsetMs / 1000);
     const iframe = document.querySelector(".video-preview iframe") as HTMLIFrameElement;
     if (iframe && videoInfo) iframe.src = `https://www.youtube.com/embed/${videoInfo.videoId}?start=${seconds}&autoplay=1`;
+    videoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleTranslateTabClick = () => {
@@ -329,7 +335,7 @@ export default function DashboardPage() {
       {videoInfo && (
         <>
           {/* Video Info */}
-          <div className="result-panel animate-fade-up">
+          <div ref={videoSectionRef} className="result-panel animate-fade-up">
             <h3>🎬 Video Information</h3>
             <div className="video-preview">
               <iframe
@@ -355,7 +361,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Topics */}
-          {topics.length > 0 && (
+          {lectureFeaturesEnabled && topics.length > 0 && (
             <div className="result-panel animate-fade-up delay-1">
               <h3>📋 Topics & Timestamps</h3>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "4px" }}>
@@ -384,7 +390,7 @@ export default function DashboardPage() {
           )}
 
           {/* Languages — MOVED ABOVE TRANSCRIPT */}
-          {fullText && (
+          {lectureFeaturesEnabled && fullText && (
             <div
               ref={languageSectionRef}
               className="result-panel animate-fade-up delay-2"
@@ -421,7 +427,7 @@ export default function DashboardPage() {
           )}
 
           {/* Transcript & Notes */}
-          {(fullText || transcript.length > 0) && (
+          {lectureFeaturesEnabled && (fullText || transcript.length > 0) && (
             <div className="result-panel animate-fade-up delay-3">
               <h3>📝 Transcript & Notes</h3>
               <div className="tabs" style={{ flexWrap: "wrap" }}>

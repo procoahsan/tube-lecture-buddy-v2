@@ -15,7 +15,7 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const urlError = searchParams.get("error");
   const urlMessage = searchParams.get("message");
 
