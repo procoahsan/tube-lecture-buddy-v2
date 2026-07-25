@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractVideoId } from "@/lib/utils";
-import { YoutubeTranscript } from "youtube-transcript";
+import { fetchYouTubeTranscript } from "@/lib/youtubeTranscript";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,13 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid YouTube URL" }, { status: 400 });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-
-    const formatted = transcript.map((item) => ({
-      text: item.text,
-      offset: item.offset,
-      duration: item.duration,
-    }));
+    const formatted = await fetchYouTubeTranscript(videoId);
 
     const fullText = formatted.map((item) => item.text).join(" ");
 
@@ -32,8 +30,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Transcript error:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch transcript. The video may not have captions available.";
     return NextResponse.json(
-      { error: "Failed to fetch transcript. The video may not have captions available." },
+      { error: message },
       { status: 500 }
     );
   }
