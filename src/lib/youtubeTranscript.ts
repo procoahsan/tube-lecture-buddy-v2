@@ -1,4 +1,5 @@
 import { YoutubeTranscript } from "youtube-transcript";
+import { ProxyAgent, type Dispatcher } from "undici";
 
 export interface TranscriptItem {
   text: string;
@@ -22,6 +23,10 @@ interface TimedTextTrack {
   kind: string;
 }
 
+type UndiciRequestInit = RequestInit & {
+  dispatcher?: Dispatcher;
+};
+
 const WEB_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -34,6 +39,9 @@ const DEFAULT_HEADERS = {
   Origin: "https://www.youtube.com",
   Referer: "https://www.youtube.com/",
 };
+
+const PROXY_URL = process.env.YOUTUBE_PROXY_URL;
+const proxyAgent = PROXY_URL ? new ProxyAgent(PROXY_URL) : undefined;
 
 function getCookieHeader(): string | undefined {
   const cookie = process.env.YOUTUBE_TRANSCRIPT_COOKIE || process.env.YOUTUBE_COOKIES;
@@ -50,11 +58,14 @@ async function youtubeFetch(input: RequestInfo | URL, init: RequestInit = {}): P
   const cookie = getCookieHeader();
   if (cookie && !headers.has("Cookie")) headers.set("Cookie", cookie);
 
-  return fetch(input, {
+  const fetchInit: UndiciRequestInit = {
     ...init,
     cache: "no-store",
     headers,
-  });
+    ...(proxyAgent ? { dispatcher: proxyAgent } : {}),
+  };
+
+  return fetch(input, fetchInit);
 }
 
 function normalizeTranscript(items: TranscriptItem[]): TranscriptItem[] {
